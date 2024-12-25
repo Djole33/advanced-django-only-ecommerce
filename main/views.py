@@ -1,10 +1,16 @@
 from django.shortcuts import render
 from django.conf import settings
+from .models import *
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 
 def index(request):
-    return render(request, 'main/index.html', {'MEDIA_URL': settings.MEDIA_URL})
+    products = Product.objects.all()
+    categories = Category.objects.all()
+
+
+    return render(request, 'main/index.html', {'products': products, 'categories': categories, 'MEDIA_URL': settings.MEDIA_URL})
 
 def shop(request):
     return render(request, 'main/shop.html', {'MEDIA_URL': settings.MEDIA_URL})
