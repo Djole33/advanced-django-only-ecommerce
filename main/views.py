@@ -3,6 +3,7 @@ from django.conf import settings
 from .models import Product, Category
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
+from django.core.paginator import Paginator
 
 # Create your views here.
 
@@ -19,7 +20,19 @@ def index(request):
     return render(request, 'main/index.html', {'products': products, 'categories': categories, 'MEDIA_URL': settings.MEDIA_URL})
 
 def shop(request):
-    return render(request, 'main/shop.html', {'MEDIA_URL': settings.MEDIA_URL})
+    products = Product.objects.all()
+    paginator = Paginator(products, 2)
+    page_number = request.GET.get('page')
+    products = paginator.get_page(page_number)
+
+    next_page = products.paginator.num_pages
+    page_list = []
+
+    for page_num in range(next_page):
+        page_num += 1
+        page_list.append(page_num)
+
+    return render(request, 'main/shop.html', {'products': products, 'page_list': page_list, 'MEDIA_URL': settings.MEDIA_URL})
 
 def detail(request, pk):
     product = Product.objects.get(id=pk)
@@ -28,7 +41,19 @@ def detail(request, pk):
 def category_page(request, name):
     category = Category.objects.get(name=name.capitalize())
     products = Product.objects.filter(category=category.id)
-    return render(request, 'main/category_page.html', {'category': category, 'products': products, 'MEDIA_URL': settings.MEDIA_URL})
+
+    paginator = Paginator(products, 1)
+    page_number = request.GET.get('page')
+    products = paginator.get_page(page_number)
+
+    next_page = products.paginator.num_pages
+    page_list = []
+
+    for page_num in range(next_page):
+        page_num += 1
+        page_list.append(page_num)
+
+    return render(request, 'main/category_page.html', {'category': category, 'products': products, 'page_list': page_list, 'MEDIA_URL': settings.MEDIA_URL})
 
 def cart(request):
     return render(request, 'main/cart.html', {'MEDIA_URL': settings.MEDIA_URL})
