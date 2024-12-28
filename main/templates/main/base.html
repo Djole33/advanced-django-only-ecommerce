@@ -140,6 +140,15 @@
                                 </div>
                             </div>
                             <a href="{% url 'contact' %}" class="nav-item nav-link">Contact</a>
+                            {% if user.is_authenticated %}
+                            <form action="{% url 'logout_user' %}" method="post">
+                                {% csrf_token %}
+                                <a href="{% url 'logout_user' %}" class="nav-item nav-link">Logout</a>
+                            </form>
+                            {% else %}
+                            <a href="{% url 'register_user' %}" class="nav-item nav-link">Register</a>
+                            <a href="{% url 'login_user' %}" class="nav-item nav-link">Login</a>
+                            {% endif %}
                         </div>
                         <div class="navbar-nav ml-auto py-0 d-none d-lg-block">
                             <a href="" class="btn px-0">
@@ -157,6 +166,24 @@
         </div>
     </div>
     <!-- Navbar End -->
+
+    {% for message in messages %}
+
+    {% if message.level == DEFAULT_MESSAGE_LEVELS.SUCCESS %}
+
+    <p class="alert alert-success float-center text-center message-text"> {{ message }} </p>
+
+    {% elif message.level == DEFAULT_MESSAGE_LEVELS.INFO %}
+
+    <p class="alert alert-info float-center text-center message-text"> {{ message }} </p>
+
+    {% elif message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+
+    <p class="alert alert-danger float-center text-center message-text"> {{ message }} </p>
+
+    {% endif %}
+
+    {% endfor %}
 
     {% block body %}
 
