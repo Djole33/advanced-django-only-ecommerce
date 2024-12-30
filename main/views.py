@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.conf import settings
-from .models import Product, Category
+from .models import Product, Category, Review
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.core.paginator import Paginator
@@ -39,7 +39,9 @@ def shop(request):
 
 def detail(request, pk):
     product = Product.objects.get(id=pk)
-    return render(request, 'main/detail.html', {'product': product, 'MEDIA_URL': settings.MEDIA_URL})
+    reviews = Review.objects.filter(product=product.id)
+
+    return render(request, 'main/detail.html', {'product': product, 'reviews':reviews, 'URL': settings.MEDIA_URL})
 
 def category_page(request, name):
     category = Category.objects.get(name=name.capitalize())
