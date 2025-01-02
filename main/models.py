@@ -24,6 +24,9 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def total_reviews(self):
+        return self.product_review.count()
 
 class Review(models.Model):
     class Star(models.IntegerChoices):
@@ -41,3 +44,20 @@ class Review(models.Model):
 
     def __str__(self):
         return f'{self.title}'
+    
+class Cart(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    price = models.DecimalField(default=0, decimal_places=2, max_digits=6)
+    
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, related_name="cart_items", on_delete=models.CASCADE, default='1')
+    quantity = models.PositiveIntegerField(default=1)
+
+    def total_price(self):
+        if self.product.is_sale:
+            self.cart.price = self.product.sale_price * self.quantity
+            return self.product.sale_price * self.quantity
+        else:
+            self.cart.price = self.product.price * self.quantity
+            return self.product.price * self.quantity

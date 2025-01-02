@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.conf import settings
-from .models import Product, Category, Review
+from .models import Product, Category, Review, Cart, CartItem
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.core.paginator import Paginator
@@ -61,7 +61,17 @@ def category_page(request, name):
     return render(request, 'main/category_page.html', {'category': category, 'products': products, 'page_list': page_list, 'MEDIA_URL': settings.MEDIA_URL})
 
 def cart(request):
-    return render(request, 'main/cart.html', {'MEDIA_URL': settings.MEDIA_URL})
+    cart = Cart.objects.get(user=request.user)
+    cart_items = CartItem.objects.filter(cart=cart)
+    total_price = 0
+
+    for item in cart_items:
+        total_price += item.total_price()
+
+    cart.price = total_price
+    cart.save()
+
+    return render(request, 'main/cart.html', {'cart_items': cart_items, 'cart': cart, 'total_price': total_price, 'MEDIA_URL': settings.MEDIA_URL})
 
 def checkout(request):
     return render(request, 'main/checkout.html', {'MEDIA_URL': settings.MEDIA_URL})
