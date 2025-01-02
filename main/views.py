@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from .models import Product, Category, Review, Cart, CartItem
 from django.shortcuts import get_object_or_404
@@ -61,17 +61,42 @@ def category_page(request, name):
     return render(request, 'main/category_page.html', {'category': category, 'products': products, 'page_list': page_list, 'MEDIA_URL': settings.MEDIA_URL})
 
 def cart(request):
-    cart = Cart.objects.get(user=request.user)
-    cart_items = CartItem.objects.filter(cart=cart)
-    total_price = 0
+    try:
+        cart = Cart.objects.get(user=request.user)
+        cart_items = CartItem.objects.filter(cart=cart)
+        total_price = sum(item.total_price() for item in cart_items)
+        taxes_price = total_price + (total_price * 20) / 100
 
-    for item in cart_items:
-        total_price += item.total_price()
+        cart.price = total_price
+        cart.save()
 
-    cart.price = total_price
-    cart.save()
+        return render(request, 'main/cart.html', {'cart_items': cart_items, 'cart': cart, 'total_price': total_price, 'taxes_price': taxes_price, 'MEDIA_URL': settings.MEDIA_URL})
 
-    return render(request, 'main/cart.html', {'cart_items': cart_items, 'cart': cart, 'total_price': total_price, 'MEDIA_URL': settings.MEDIA_URL})
+    except Cart.DoesNotExist:
+        messages.error(request, "Add something to cart first.")
+        return redirect('index')
+    
+def add_cart(request, pk):
+    add_product = Product.objects.get(id=pk)
+    try:
+        if request.user:
+            cart = Cart.objects.get(user=request.user)
+            cart_items = CartItem.objects.create(cart=cart, product=add_product, quantity=1)
+            cart.save()
+            return redirect('cart')
+        else:
+            messages.error(request, "Log in first.")
+            return redirect('cart')
+    except Cart.DoesNotExist:
+        cart = Cart.objects.create(user=request.user)
+        return redirect('cart')
+    
+def delete_cart(request, pk):
+    cart_item = CartItem.objects.get(id=pk)
+    if request.method == "POST":
+        cart_item.delete()
+        messages.success(request, "Item deleted successfully.")
+        return redirect('cart')
 
 def checkout(request):
     return render(request, 'main/checkout.html', {'MEDIA_URL': settings.MEDIA_URL})
