@@ -50,8 +50,8 @@ class Cart(models.Model):
     price = models.DecimalField(default=0, decimal_places=2, max_digits=6)
     
 class CartItem(models.Model):
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, related_name="cart_items", on_delete=models.CASCADE, default='1')
+    cart = models.ForeignKey(Cart, related_name="cart_items", on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, default='1')
     quantity = models.PositiveIntegerField(default=1)
 
     def total_price(self):
