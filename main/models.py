@@ -61,3 +61,15 @@ class CartItem(models.Model):
         else:
             self.cart.price = self.product.price * self.quantity
             return self.product.price * self.quantity
+        
+class Order(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    cart = models.ForeignKey(Cart, related_name="order_items", on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    surname = models.CharField(max_length=100)
+    email = models.CharField(max_length=200)
+    phone = models.CharField(max_length=100)
+    address1 = models.CharField(max_length=200)
+    address2 = models.CharField(max_length=200)
+    country = models.CharField(max_length=200)
+    city = models.CharField(max_length=200)

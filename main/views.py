@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
-from .models import Product, Category, Review, Cart, CartItem
+from .models import Product, Category, Review, Cart, CartItem, Order
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.core.paginator import Paginator
@@ -160,12 +160,44 @@ def decrease_quantity(request, pk):
             return redirect('cart')
 
 def checkout(request):
-    if request.user.is_authenticated:
-        cart = Cart.objects.get(user=request.user)
-    else:
-        cart = 0
+    try:
+        if request.user.is_authenticated:
+            current_user = request.user
+            cart = Cart.objects.get(user=request.user)
+            cart_items = CartItem.objects.filter(cart=cart)
+            total_price = sum(item.total_price() for item in cart_items)
+            taxes_price = total_price + (total_price * 20) / 100
 
-    return render(request, 'main/checkout.html', {'cart': cart, 'MEDIA_URL': settings.MEDIA_URL})
+            if request.method == "POST":
+                order_name = request.POST.get('order_name')
+                order_surname = request.POST.get('order_surname')
+                order_email = request.POST.get('order_email')
+                order_phone = request.POST.get('order_phone')
+                order_address1 = request.POST.get('order_address1')
+                order_address2 = request.POST.get('order_address2')
+                order_country = request.POST.get('order_country')
+                order_city = request.POST.get('order_city')
+
+                create_order = Order.objects.create(user=current_user, cart=cart, name=order_name, surname=order_surname, email=order_email, 
+                                                    phone=order_phone, address1=order_address1, address2=order_address2, 
+                                                    country=order_country, city=order_city)
+                create_order.save()
+
+                cart.delete()
+                new_cart = Cart.objects.create(user=current_user)
+                new_cart.save()
+
+                messages.success(request, "Order placed successfully.")
+                return redirect('index')
+
+        else:
+            cart = 0
+
+    except Cart.DoesNotExist:
+        messages.error(request, "Add something to cart first.")
+        return redirect('index')
+
+    return render(request, 'main/checkout.html', {'cart': cart, 'cart_items': cart_items, 'total_price': total_price, 'taxes_price': taxes_price, 'MEDIA_URL': settings.MEDIA_URL})
 
 def contact(request):
     if request.user.is_authenticated:
