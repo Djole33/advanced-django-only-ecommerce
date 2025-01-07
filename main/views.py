@@ -8,6 +8,8 @@ from .forms import SignUpForm
 from django.contrib.auth.models import auth
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
+from django.core.serializers.json import DjangoJSONEncoder
+import json
 
 # Create your views here.
 
@@ -109,7 +111,7 @@ def cart(request):
 def add_cart(request, pk):
     add_product = Product.objects.get(id=pk)
     try:
-        if request.user:
+        if request.user.is_authenticated:
             cart = Cart.objects.get(user=request.user)
             if not cart.cart_items.filter(product=add_product).exists():
                 cart_items = CartItem.objects.create(cart=cart, product=add_product, quantity=1)
@@ -177,12 +179,33 @@ def checkout(request):
                 order_address2 = request.POST.get('order_address2')
                 order_country = request.POST.get('order_country')
                 order_city = request.POST.get('order_city')
+                
+                # Serialize cart items into JSON format
+                cart_data = [
+                    {
+                        "product_id": item.product.id,
+                        "product_name": item.product.name,
+                        "quantity": item.quantity,
+                        "price": float(item.total_price()),
+                    }
+                    for item in cart_items
+                ]
 
-                create_order = Order.objects.create(user=current_user, cart=cart, name=order_name, surname=order_surname, email=order_email, 
-                                                    phone=order_phone, address1=order_address1, address2=order_address2, 
-                                                    country=order_country, city=order_city)
-                create_order.save()
+                # Create the order with the serialized cart data
+                create_order = Order.objects.create(
+                    user=current_user,
+                    cart_data=cart_data,
+                    name=order_name,
+                    surname=order_surname,
+                    email=order_email,
+                    phone=order_phone,
+                    address1=order_address1,
+                    address2=order_address2,
+                    country=order_country,
+                    city=order_city,
+                )
 
+                # Delete the old cart and create a new empty cart
                 cart.delete()
                 new_cart = Cart.objects.create(user=current_user)
                 new_cart.save()
@@ -222,6 +245,10 @@ def register_user(request):
             password = form.cleaned_data['password1']
             user = authenticate(username=username, password=password)
             login(request, user)
+            if cart == 0:
+                cart = Cart.objects.create(user=request.user)
+            else:
+                cart = Cart.objects.get(user=request.user)
             messages.success(request, ('You have been successfully registered!'))
             return redirect('index')
         else:
@@ -243,6 +270,10 @@ def login_user(request):
 
         if user is not None:
             login(request, user)
+            if cart == 0:
+                cart = Cart.objects.create(user=request.user)
+            else:
+                cart = Cart.objects.get(user=request.user)
             messages.success(request, ('You have been successfully logged in!'))
             return redirect('index')
         else:

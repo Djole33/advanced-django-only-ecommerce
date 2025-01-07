@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models import JSONField
 
 # Create your models here.
 
@@ -64,7 +65,7 @@ class CartItem(models.Model):
         
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    cart = models.ForeignKey(Cart, related_name="order_items", on_delete=models.CASCADE)
+    cart_data = JSONField(default='e')
     name = models.CharField(max_length=100)
     surname = models.CharField(max_length=100)
     email = models.CharField(max_length=200)
